@@ -106,6 +106,16 @@
   .iconbtn:active { background: var(--raised); }
   .iconbtn.active { color: var(--gold); background: var(--gold-soft); }
   .iconbtn svg { width: 22px; height: 22px; }
+  #menuBtn { position: relative; }
+  #menuBtn .syncdot {
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+  #menuBtn .syncdot.err { background: var(--danger); }
+  a { color: var(--gold); }
 
   .searchrow { padding: 0 16px 10px; display: none; }
   .searchrow.open { display: block; }
@@ -365,7 +375,7 @@
     color: var(--muted);
     margin-bottom: 7px;
   }
-  .field input[type="text"], .field textarea {
+  .field input[type="text"], .field input[type="password"], .field textarea {
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--line);
@@ -464,6 +474,7 @@
     </button>
     <button class="iconbtn" id="menuBtn" aria-label="Menu" title="Menu">
       <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+      <span class="syncdot" id="syncDot" hidden></span>
     </button>
   </header>
 
@@ -622,24 +633,32 @@
     items = new Map();
     (arr || []).forEach(function (it) { if (it && it.id) items.set(it.id, it); });
   }
+  function alive(it) { return !it.deleted; }
   async function saveItem(item) {
     items.set(item.id, item);
     render();
+    localSave();
+    if (storage.mode === "github") { scheduleSync(); return; }
     if (storage.db) {
       try { await storage.db.doc("items/" + item.id).set(item); }
-      catch (e) { toast("Couldn't sync — saved on this device"); localSave(); }
-    } else {
-      localSave();
+      catch (e) { toast("Couldn't sync — saved on this device"); }
     }
   }
   async function removeItem(id) {
-    items.delete(id);
+    /* Deletes become tombstones so they propagate to other devices
+       instead of the note reappearing on the next merge. */
+    var old = items.get(id) || {};
+    var stone = {
+      id: id, kind: old.kind || "match", deleted: true,
+      createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    };
+    items.set(id, stone);
     render();
+    localSave();
+    if (storage.mode === "github") { scheduleSync(); return; }
     if (storage.db) {
-      try { await storage.db.doc("items/" + id).delete(); }
+      try { await storage.db.doc("items/" + id).set(stone); }
       catch (e) { toast("Couldn't sync the delete"); }
-    } else {
-      localSave();
     }
   }
   function connectDb() {
@@ -658,6 +677,140 @@
         render();
       });
     }).catch(function () {});
+  }
+
+  /* ---------- GitHub sync ---------- */
+  var LS_GH = "ringGeneral.github";
+  var GH = { cfg: null, sha: null, busy: false, again: false, timer: null, state: "off", detail: "", lastSync: 0 };
+
+  function ghLoadCfg() {
+    try { GH.cfg = JSON.parse(lsGet(LS_GH) || "null"); } catch (e) { GH.cfg = null; }
+    if (GH.cfg && !(GH.cfg.token && GH.cfg.repo)) GH.cfg = null;
+  }
+  function ghConfigured() { return !!GH.cfg; }
+  function ghHeaders() {
+    return {
+      "Authorization": "Bearer " + GH.cfg.token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+  }
+  function ghUrl() {
+    return "https://api.github.com/repos/" + GH.cfg.repo + "/contents/" +
+      GH.cfg.path.split("/").map(encodeURIComponent).join("/");
+  }
+  function b64encodeUtf8(str) {
+    var bytes = new TextEncoder().encode(str), bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+  function b64decodeUtf8(b64) {
+    var bin = atob(b64.replace(/\s/g, ""));
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  async function ghPull() {
+    var res = await fetch(ghUrl() + "?ref=" + encodeURIComponent(GH.cfg.branch), { headers: ghHeaders() });
+    if (res.status === 404) { GH.sha = null; return null; }
+    if (res.status === 401 || res.status === 403) throw new Error("GitHub rejected the token — check it hasn't expired");
+    if (!res.ok) throw new Error("GitHub read failed (" + res.status + ")");
+    var body = await res.json();
+    GH.sha = body.sha;
+    try {
+      var arr = JSON.parse(b64decodeUtf8(body.content));
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  async function ghPush() {
+    var payload = {
+      message: "Update wrestling notes",
+      content: b64encodeUtf8(JSON.stringify(Array.from(items.values()), null, 2)),
+      branch: GH.cfg.branch
+    };
+    if (GH.sha) payload.sha = GH.sha;
+    var res = await fetch(ghUrl(), { method: "PUT", headers: ghHeaders(), body: JSON.stringify(payload) });
+    if (res.status === 409 || res.status === 422) { var e = new Error("conflict"); e.conflict = true; throw e; }
+    if (res.status === 401 || res.status === 403) throw new Error("GitHub rejected the token — check it hasn't expired");
+    if (!res.ok) throw new Error("GitHub write failed (" + res.status + ")");
+    var body = await res.json();
+    GH.sha = body.content && body.content.sha;
+  }
+  /* Per-note last-write-wins merge of the remote file into memory. */
+  function mergeRemote(remoteArr) {
+    var localNewer = false, changedLocal = false;
+    var remote = new Map();
+    (remoteArr || []).forEach(function (it) { if (it && it.id) remote.set(it.id, it); });
+    remote.forEach(function (rit, id) {
+      var lit = items.get(id);
+      if (!lit || (rit.updatedAt || 0) > (lit.updatedAt || 0)) {
+        items.set(id, rit);
+        changedLocal = true;
+      } else if ((lit.updatedAt || 0) > (rit.updatedAt || 0)) {
+        localNewer = true;
+      }
+    });
+    items.forEach(function (lit, id) { if (!remote.has(id)) localNewer = true; });
+    return { changedLocal: changedLocal, localNewer: localNewer };
+  }
+  async function ghSync(manual) {
+    if (!ghConfigured()) return;
+    if (GH.busy) { GH.again = true; return; }
+    GH.busy = true;
+    GH.state = "syncing";
+    updateSyncUI();
+    try {
+      var remote = await ghPull();
+      var m = mergeRemote(remote || []);
+      if (m.changedLocal) { localSave(); render(); }
+      if (remote === null || m.localNewer) {
+        try { await ghPush(); }
+        catch (e) {
+          if (e && e.conflict) {
+            var r2 = await ghPull();
+            mergeRemote(r2 || []);
+            localSave();
+            render();
+            await ghPush();
+          } else { throw e; }
+        }
+      }
+      GH.state = "ok";
+      GH.lastSync = Date.now();
+      GH.detail = "";
+      if (manual) toast("Synced with GitHub");
+    } catch (err) {
+      GH.state = navigator.onLine === false ? "offline" : "error";
+      GH.detail = (err && err.message) ? err.message : "Sync failed";
+      if (manual) toast(GH.state === "offline" ? "Offline — will sync when you're back" : GH.detail);
+    }
+    GH.busy = false;
+    updateSyncUI();
+    if (GH.again) { GH.again = false; ghSync(false); }
+  }
+  function scheduleSync() {
+    if (!ghConfigured()) return;
+    clearTimeout(GH.timer);
+    GH.timer = setTimeout(function () { ghSync(false); }, 1500);
+  }
+  function updateSyncUI() {
+    var dot = $("#syncDot");
+    if (!dot) return;
+    dot.hidden = !ghConfigured();
+    dot.classList.toggle("err", GH.state === "error" || GH.state === "offline");
+  }
+  function syncStatusText() {
+    if (!ghConfigured()) return "";
+    if (GH.state === "syncing") return "Syncing with GitHub…";
+    if (GH.state === "offline") return "Offline — changes are queued and sync when you're back.";
+    if (GH.state === "error") return "Sync problem: " + GH.detail;
+    if (GH.lastSync) {
+      var t = new Date(GH.lastSync).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      return "Synced to " + GH.cfg.repo + " at " + t + ".";
+    }
+    return "GitHub sync is on (" + GH.cfg.repo + ").";
   }
 
   /* ---------- Helpers ---------- */
@@ -758,7 +911,7 @@
   function renderList() {
     var main = $("#list");
     main.innerHTML = "";
-    var all = Array.from(items.values()).filter(matchesSearch);
+    var all = Array.from(items.values()).filter(alive).filter(matchesSearch);
 
     if (state.tab === "matches" || state.tab === "sequences") {
       var kind = TAB_KIND[state.tab];
@@ -999,6 +1152,23 @@
       var wrap = document.createElement("div");
       wrap.className = "menuline";
 
+      var syncBtn = document.createElement("button");
+      syncBtn.className = "btn ghost";
+      syncBtn.textContent = ghConfigured() ? "GitHub sync settings" : "Set up GitHub sync";
+      syncBtn.addEventListener("click", openSyncSettings);
+      wrap.appendChild(syncBtn);
+
+      if (ghConfigured()) {
+        var nowBtn = document.createElement("button");
+        nowBtn.className = "btn ghost";
+        nowBtn.textContent = "Sync now";
+        nowBtn.addEventListener("click", function () {
+          closeOverlay();
+          ghSync(true);
+        });
+        wrap.appendChild(nowBtn);
+      }
+
       var exportBtn = document.createElement("button");
       exportBtn.className = "btn ghost";
       exportBtn.textContent = "Export notes (JSON)";
@@ -1015,10 +1185,85 @@
 
       var note = document.createElement("p");
       note.className = "storagenote";
-      note.textContent = storage.mode === "db"
-        ? "Synced to your Claude storage — your notes follow you across devices."
-        : "Stored on this device in this browser. Export now and then to keep a backup.";
+      if (ghConfigured()) {
+        note.textContent = syncStatusText();
+      } else if (storage.mode === "db") {
+        note.textContent = "Synced to your Claude storage — your notes follow you across devices.";
+      } else {
+        note.textContent = "Stored on this device in this browser. Set up GitHub sync to keep your notes safe off-device.";
+      }
       body.appendChild(note);
+    });
+  }
+
+  function openSyncSettings() {
+    var cfg = GH.cfg || { token: "", repo: "CLVernon/wrestling-notes", branch: "main", path: "data/notes.json" };
+    sheet("GitHub Sync", function (body) {
+      var hint = document.createElement("p");
+      hint.className = "hint";
+      hint.innerHTML = "Notes are saved to a JSON file in a GitHub repo you own — private, versioned, and shared by every device you set this up on. Create a fine-grained token at <a href=\"https://github.com/settings/personal-access-tokens/new\" target=\"_blank\" rel=\"noopener\">github.com/settings/personal-access-tokens</a>: give it access to only that repo, with Contents set to Read and write.";
+      body.appendChild(hint);
+
+      function textField(id, labelText, value, placeholder, type) {
+        var f = document.createElement("div");
+        f.className = "field";
+        var lab = document.createElement("label");
+        lab.setAttribute("for", id);
+        lab.textContent = labelText;
+        var inp = document.createElement("input");
+        inp.type = type || "text";
+        inp.id = id;
+        inp.autocomplete = "off";
+        inp.value = value || "";
+        inp.placeholder = placeholder || "";
+        f.appendChild(lab);
+        f.appendChild(inp);
+        body.appendChild(f);
+        return inp;
+      }
+      var tokenIn = textField("gh-token", "Access token", cfg.token, "github_pat_…", "password");
+      var repoIn = textField("gh-repo", "Repository (owner/name)", cfg.repo, "CLVernon/wrestling-notes");
+      var branchIn = textField("gh-branch", "Branch", cfg.branch || "main", "main");
+      var pathIn = textField("gh-path", "File path", cfg.path || "data/notes.json", "data/notes.json");
+
+      var save = document.createElement("button");
+      save.className = "btn";
+      save.textContent = "Save & sync";
+      save.addEventListener("click", function () {
+        var token = tokenIn.value.trim();
+        var repo = repoIn.value.trim()
+          .replace(/^https?:\/\/github\.com\//i, "")
+          .replace(/\.git$/i, "")
+          .replace(/\/+$/, "");
+        var branch = branchIn.value.trim() || "main";
+        var path = pathIn.value.trim().replace(/^\/+/, "") || "data/notes.json";
+        if (!token) { toast("Paste your GitHub token"); tokenIn.focus(); return; }
+        if (!/^[^\/\s]+\/[^\/\s]+$/.test(repo)) { toast("Repository should look like owner/name"); repoIn.focus(); return; }
+        GH.cfg = { token: token, repo: repo, branch: branch, path: path };
+        GH.sha = null;
+        lsSet(LS_GH, JSON.stringify(GH.cfg));
+        storage.mode = "github";
+        closeOverlay();
+        updateSyncUI();
+        ghSync(true);
+      });
+      body.appendChild(save);
+
+      if (ghConfigured()) {
+        var off = document.createElement("button");
+        off.className = "btn danger";
+        off.textContent = "Turn off sync on this device";
+        off.addEventListener("click", function () {
+          try { localStorage.removeItem(LS_GH); } catch (e) {}
+          GH.cfg = null;
+          GH.state = "off";
+          storage.mode = "local";
+          closeOverlay();
+          updateSyncUI();
+          toast("Sync off — notes stay on this device and in the repo");
+        });
+        body.appendChild(off);
+      }
     });
   }
 
@@ -1123,16 +1368,27 @@
   });
 
   /* ---------- Boot ---------- */
+  ghLoadCfg();
   var loaded = localLoad();
   if (loaded && loaded.length) {
     setAll(loaded);
-  } else if (!lsGet(LS_SEEDED)) {
+  } else if (!lsGet(LS_SEEDED) && !ghConfigured()) {
     setAll(exampleItems());
     localSave();
     lsSet(LS_SEEDED, "1");
   }
   render();
-  connectDb();
+  if (ghConfigured()) {
+    storage.mode = "github";
+    updateSyncUI();
+    ghSync(false);
+    window.addEventListener("online", function () { ghSync(false); });
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) ghSync(false);
+    });
+  } else {
+    connectDb();
+  }
 
   if ("serviceWorker" in navigator && !window.claude && location.protocol === "https:") {
     window.addEventListener("load", function () {
