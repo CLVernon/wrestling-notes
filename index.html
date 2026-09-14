@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14100f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- core:start -->
+<title>Ring General</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #14100f;
+    --surface: #1e1817;
+    --raised: #2a211f;
+    --line: #382c27;
+    --line-soft: #2b221f;
+    --text: #f1e9dd;
+    --muted: #a3948a;
+    --faint: #7a6d64;
+    --gold: #d9a13f;
+    --gold-soft: rgba(217, 161, 63, 0.14);
+    --heat: #e05252;
+    --heat-soft: rgba(224, 82, 82, 0.14);
+    --comeback: #58a8dd;
+    --comeback-soft: rgba(88, 168, 221, 0.14);
+    --impact: #dd7440;
+    --impact-soft: rgba(221, 116, 64, 0.14);
+    --fake: #b78ae0;
+    --fake-soft: rgba(183, 138, 224, 0.14);
+    --danger: #e05252;
+    --font-display: "Oswald", "Arial Narrow", "Helvetica Neue", sans-serif;
+    --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app {
+    max-width: 560px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  input, textarea { font: inherit; color: var(--text); }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px 10px;
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  }
+  .brand {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+  }
+  .brand h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .brand h1 .accent { color: var(--gold); }
+  .brand .rule {
+    flex: 1;
+    height: 3px;
+    min-width: 12px;
+    background: repeating-linear-gradient(to bottom, var(--gold) 0 1px, transparent 1px 3px);
+    opacity: 0.55;
+    align-self: center;
+  }
+  .iconbtn {
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    color: var(--muted);
+  }
+  .iconbtn:active { background: var(--raised); }
+  .iconbtn.active { color: var(--gold); background: var(--gold-soft); }
+  .iconbtn svg { width: 22px; height: 22px; }
+
+  .searchrow { padding: 0 16px 10px; display: none; }
+  .searchrow.open { display: block; }
+  .searchrow input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .searchrow input::placeholder { color: var(--faint); }
+
+  /* ---------- Filter chips ---------- */
+  .chiprow {
+    display: flex;
+    gap: 8px;
+    padding: 4px 16px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chiprow::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto;
+    padding: 6px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .chip.on { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+
+  /* ---------- List ---------- */
+  main { flex: 1; padding: 2px 16px 16px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 14px;
+    padding: 13px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .card:active { background: var(--raised); }
+  .card .titleline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 17.5px;
+    letter-spacing: 0.03em;
+    color: var(--text);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .card .when {
+    color: var(--faint);
+    font-size: 12.5px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: var(--muted);
+    background: var(--raised);
+  }
+  .badge.heat { color: var(--heat); background: var(--heat-soft); }
+  .badge.comeback { color: var(--comeback); background: var(--comeback-soft); }
+  .badge.finish { color: var(--gold); background: var(--gold-soft); }
+  .badge.impact { color: var(--impact); background: var(--impact-soft); }
+  .badge.fake { color: var(--fake); background: var(--fake-soft); }
+  .badge.example { color: var(--faint); background: none; border: 1px dashed var(--line); }
+  .card .preview {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    white-space: pre-line;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Move rows grouped by category */
+  .movegroup { margin: 6px 0 14px; }
+  .movegroup h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .movegroup h2 .count { color: var(--faint); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; }
+  .movegroup h2::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .movegroup h2.impact { color: var(--impact); }
+  .movegroup h2.fake { color: var(--fake); }
+  .movegroup h2.finish { color: var(--gold); }
+  .moverow {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 11px 14px;
+  }
+  .moverow + .moverow { margin-top: 8px; }
+  .moverow:active { background: var(--raised); }
+  .moverow .name {
+    font-weight: 600;
+    font-size: 15.5px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .moverow .note { color: var(--muted); font-size: 13.5px; }
+
+  .empty {
+    margin: 48px 12px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty .ropes {
+    width: 120px; height: 26px;
+    margin: 0 auto 18px;
+    background: repeating-linear-gradient(to bottom, var(--line) 0 2px, transparent 2px 12px);
+    opacity: 0.9;
+  }
+  .empty h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 15px;
+    color: var(--text);
+    margin: 0 0 6px;
+  }
+  .empty p { margin: 0; font-size: 14px; }
+
+  /* ---------- FAB ---------- */
+  .fab {
+    position: fixed;
+    right: max(18px, calc(50vw - 280px + 18px));
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    width: 56px; height: 56px;
+    border-radius: 18px;
+    background: var(--gold);
+    color: #221a08;
+    display: grid; place-items: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  }
+  .fab:active { filter: brightness(1.1); }
+  .fab svg { width: 26px; height: 26px; }
+
+  /* ---------- Tab bar ---------- */
+  .tabbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    justify-content: center;
+    background: rgba(20, 16, 15, 0.92);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line-soft);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .tabbar .inner { display: flex; width: 100%; max-width: 560px; }
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 0 9px;
+    color: var(--faint);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tab svg { width: 22px; height: 22px; }
+  .tab.on { color: var(--gold); }
+
+  /* ---------- Sheets (editor / menu / transfer) ---------- */
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(8, 6, 5, 0.6);
+    z-index: 40;
+  }
+  .sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    margin: 0 auto;
+    max-width: 560px;
+    max-height: 92dvh;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet .shead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px 10px 18px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .sheet .shead h2 {
+    flex: 1;
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .sheet .sbody {
+    overflow-y: auto;
+    padding: 16px 18px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  .field input[type="text"], .field textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--faint); }
+  .field textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .seg button.on { border-color: var(--gold); color: var(--gold); background: var(--gold-soft); }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    background: var(--gold);
+    color: #221a08;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .btn:active { filter: brightness(1.08); }
+  .btn.ghost {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: var(--font-body);
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-size: 15px;
+  }
+  .btn.danger { background: none; border: 1px solid rgba(224,82,82,0.4); color: var(--danger); }
+  .menuline { display: flex; flex-direction: column; gap: 10px; }
+  .storagenote {
+    color: var(--faint);
+    font-size: 13px;
+    text-align: center;
+    margin: 2px 0 0;
+  }
+  .transfer textarea {
+    width: 100%;
+    min-height: 180px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+  }
+  .hint { color: var(--muted); font-size: 13.5px; margin: 0; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    background: var(--raised);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    z-index: 60;
+    max-width: 85vw;
+    text-align: center;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sheet { animation: rise 0.18s ease-out; }
+    @keyframes rise { from { transform: translateY(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+  }
+</style>
+<!-- core:end -->
+</head>
+<body>
+<!-- body:start -->
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>Ring <span class="accent">General</span></h1>
+      <div class="rule" aria-hidden="true"></div>
+    </div>
+    <button class="iconbtn" id="searchBtn" aria-label="Search notes" title="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.8-3.8"></path></svg>
+    </button>
+    <button class="iconbtn" id="menuBtn" aria-label="Menu" title="Menu">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>
+    </button>
+  </header>
+
+  <div class="searchrow" id="searchRow">
+    <input type="search" id="searchInput" placeholder="Search this tab…" autocomplete="off">
+  </div>
+
+  <div id="filters"></div>
+
+  <main id="list" aria-live="polite"></main>
+</div>
+
+<button class="fab" id="fab" aria-label="Add note">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+</button>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="inner">
+    <button class="tab" data-tab="matches" id="tab-matches">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4.5V3h6v1.5"></path><path d="M9 10h6M9 13.5h6M9 17h4"></path></svg>
+      Matches
+    </button>
+    <button class="tab" data-tab="sequences" id="tab-sequences">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2.5 5.5 13H11l-1 8.5L18.5 11H13l1-8.5z"></path></svg>
+      Sequences
+    </button>
+    <button class="tab" data-tab="moves" id="tab-moves">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 14.7 9l6.1.6-4.6 4.1 1.3 6-5.5-3.2L6.5 19.7l1.3-6L3.2 9.6 9.3 9z"></path></svg>
+      Move Set
+    </button>
+  </div>
+</nav>
+
+<div id="overlays"></div>
+<div id="toast" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Vocabulary ---------- */
+  var MATCH_TYPES = [
+    { id: "singles", label: "Singles" },
+    { id: "tag", label: "Tag" },
+    { id: "triple", label: "Triple Threat" }
+  ];
+  var SEQ_TYPES = [
+    { id: "heel-heat", label: "Heel Heat", cls: "heat" },
+    { id: "comeback", label: "Comeback", cls: "comeback" },
+    { id: "finish", label: "Finish", cls: "finish" }
+  ];
+  var MOVE_CATS = [
+    { id: "high-impact", label: "High Impact", cls: "impact" },
+    { id: "fake-finish", label: "Fake Finish", cls: "fake" },
+    { id: "finish", label: "Finish", cls: "finish" }
+  ];
+  var TAB_KIND = { matches: "match", sequences: "sequence", moves: "move" };
+  var NEW_LABEL = { matches: "New Match", sequences: "New Sequence", moves: "New Move" };
+  var EDIT_LABEL = { matches: "Edit Match", sequences: "Edit Sequence", moves: "Edit Move" };
+  var NOTE_PLACEHOLDER = {
+    match: "Spot by spot — shine, cut-off, heat, comeback, false finish, finish…",
+    sequence: "Call it out step by step — who does what, where in the ring, what the crowd should be doing…",
+    move: "Setup, position, when in the match it lands…"
+  };
+  var LS_ITEMS = "ringGeneral.items";
+  var LS_SEEDED = "ringGeneral.seeded";
+
+  function labelOf(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].label;
+    return "";
+  }
+  function clsOf(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].cls || "";
+    return "";
+  }
+
+  /* ---------- State ---------- */
+  var state = {
+    tab: "matches",
+    matchFilter: "all",
+    seqFilter: "all",
+    moveFilter: "all",
+    search: "",
+    searchOpen: false
+  };
+  var items = new Map();
+  var storage = { mode: "local", db: null };
+  var editing = null; // {kind, item|null, fields}
+  var deleteArmed = false;
+
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* ---------- Local persistence ---------- */
+  function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  function lsSet(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+  function localLoad() {
+    var raw = lsGet(LS_ITEMS);
+    if (!raw) return null;
+    try {
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : null;
+    } catch (e) { return null; }
+  }
+  function localSave() {
+    lsSet(LS_ITEMS, JSON.stringify(Array.from(items.values())));
+  }
+
+  /* ---------- Example content (first run only) ---------- */
+  function exampleItems() {
+    var now = Date.now();
+    return [
+      {
+        id: "example-match-1", kind: "match", example: true,
+        title: "Opener vs. local babyface",
+        matchType: "singles",
+        notes: "Lock-up, back him to the ropes, cheap shot on the break.\nShine: face runs armdrags, I bail to the floor to cut the heat.\nCut-off: catch him off the apron, back-first into the post.\nHeat: work the back — backbreaker, bearhug spot, cut off first comeback.\nComeback: boot up in the corner, three lariats, crowd up.\nFalse finish: superkick, long 2.9.\nFinish: low bridge escape, roll-up with tights.",
+        createdAt: now - 3600000, updatedAt: now - 3600000
+      },
+      {
+        id: "example-seq-heat", kind: "sequence", example: true,
+        title: "Corner cut-off into heat",
+        matchType: "singles", seqType: "heel-heat",
+        notes: "Face charges the corner, I dodge, snap his neck on the top rope. Stomps in the corner, ref forces the break, one more stomp behind the ref's back. Taunt the crowd before the cover.",
+        createdAt: now - 7200000, updatedAt: now - 7200000
+      },
+      {
+        id: "example-seq-comeback", kind: "sequence", example: true,
+        title: "Hot tag comeback",
+        matchType: "tag", seqType: "comeback",
+        notes: "Partner takes the long heat. False tag first — ref misses it, crowd boils. Real hot tag: fresh man in with clotheslines to both heels, back body drop, corner splash, house cleaned in 30 seconds.",
+        createdAt: now - 7000000, updatedAt: now - 7000000
+      },
+      {
+        id: "example-move-1", kind: "move", example: true,
+        title: "Spinebuster", moveCat: "high-impact",
+        notes: "Mid-match momentum swing off their rope run.",
+        createdAt: now - 9000000, updatedAt: now - 9000000
+      },
+      {
+        id: "example-move-2", kind: "move", example: true,
+        title: "Superkick", moveCat: "fake-finish",
+        notes: "Save for the 2.9 — never kick out of it twice on the same show.",
+        createdAt: now - 8900000, updatedAt: now - 8900000
+      },
+      {
+        id: "example-move-3", kind: "move", example: true,
+        title: "Frog Splash", moveCat: "finish",
+        notes: "Only after the second false finish. Protect it.",
+        createdAt: now - 8800000, updatedAt: now - 8800000
+      }
+    ];
+  }
+
+  /* ---------- Storage adapter ---------- */
+  function setAll(arr) {
+    items = new Map();
+    (arr || []).forEach(function (it) { if (it && it.id) items.set(it.id, it); });
+  }
+  async function saveItem(item) {
+    items.set(item.id, item);
+    render();
+    if (storage.db) {
+      try { await storage.db.doc("items/" + item.id).set(item); }
+      catch (e) { toast("Couldn't sync — saved on this device"); localSave(); }
+    } else {
+      localSave();
+    }
+  }
+  async function removeItem(id) {
+    items.delete(id);
+    render();
+    if (storage.db) {
+      try { await storage.db.doc("items/" + id).delete(); }
+      catch (e) { toast("Couldn't sync the delete"); }
+    } else {
+      localSave();
+    }
+  }
+  function connectDb() {
+    if (!(window.claude && typeof window.claude.use === "function")) return;
+    window.claude.use("db").then(function (db) {
+      if (!db) return;
+      storage.db = db;
+      storage.mode = "db";
+      db.collection("items").onSnapshot(function (snap) {
+        setAll(snap.docs.filter(function (d) { return d.exists; }).map(function (d) { return d.data(); }));
+        render();
+      }, function () {
+        storage.db = null;
+        storage.mode = "local";
+        setAll(localLoad() || []);
+        render();
+      });
+    }).catch(function () {});
+  }
+
+  /* ---------- Helpers ---------- */
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function uid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+  }
+  function fmtDate(ts) {
+    if (!ts) return "";
+    try {
+      return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    } catch (e) { return ""; }
+  }
+  function matchesSearch(it) {
+    if (!state.search) return true;
+    var q = state.search.toLowerCase();
+    return (it.title || "").toLowerCase().indexOf(q) >= 0 ||
+           (it.notes || "").toLowerCase().indexOf(q) >= 0;
+  }
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $("#toast");
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.hidden = true; }, 2600);
+  }
+
+  /* ---------- Rendering ---------- */
+  function chipRow(options, current, onPick) {
+    var row = document.createElement("div");
+    row.className = "chiprow";
+    options.forEach(function (opt) {
+      var b = document.createElement("button");
+      b.className = "chip" + (current === opt.id ? " on" : "");
+      b.textContent = opt.label;
+      b.addEventListener("click", function () { onPick(opt.id); });
+      row.appendChild(b);
+    });
+    return row;
+  }
+  function withAll(list) {
+    return [{ id: "all", label: "All" }].concat(list);
+  }
+
+  function renderFilters() {
+    var box = $("#filters");
+    box.innerHTML = "";
+    if (state.tab === "matches") {
+      box.appendChild(chipRow(withAll(MATCH_TYPES), state.matchFilter, function (id) {
+        state.matchFilter = id; render();
+      }));
+    } else if (state.tab === "sequences") {
+      box.appendChild(chipRow(withAll(SEQ_TYPES), state.seqFilter, function (id) {
+        state.seqFilter = id; render();
+      }));
+      box.appendChild(chipRow(withAll(MATCH_TYPES), state.matchFilter, function (id) {
+        state.matchFilter = id; render();
+      }));
+    } else {
+      box.appendChild(chipRow(withAll(MOVE_CATS), state.moveFilter, function (id) {
+        state.moveFilter = id; render();
+      }));
+    }
+  }
+
+  function badgeHtml(cls, label) {
+    return '<span class="badge ' + cls + '">' + esc(label) + "</span>";
+  }
+
+  function cardHtml(it) {
+    var badges = "";
+    if (it.kind === "sequence" && it.seqType) {
+      badges += badgeHtml(clsOf(SEQ_TYPES, it.seqType), labelOf(SEQ_TYPES, it.seqType));
+    }
+    if (it.matchType) badges += badgeHtml("", labelOf(MATCH_TYPES, it.matchType));
+    if (it.example) badges += badgeHtml("example", "Example");
+    return (
+      '<div class="titleline"><h3>' + esc(it.title || "Untitled") + "</h3>" +
+      '<span class="when">' + esc(fmtDate(it.updatedAt)) + "</span></div>" +
+      '<div class="badges">' + badges + "</div>" +
+      (it.notes ? '<p class="preview">' + esc(it.notes) + "</p>" : "")
+    );
+  }
+
+  function byUpdated(a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); }
+  function byTitle(a, b) { return (a.title || "").localeCompare(b.title || ""); }
+
+  function emptyState(title, hint) {
+    return '<div class="empty"><div class="ropes"></div><h3>' + esc(title) + "</h3><p>" + esc(hint) + "</p></div>";
+  }
+
+  function renderList() {
+    var main = $("#list");
+    main.innerHTML = "";
+    var all = Array.from(items.values()).filter(matchesSearch);
+
+    if (state.tab === "matches" || state.tab === "sequences") {
+      var kind = TAB_KIND[state.tab];
+      var list = all.filter(function (it) { return it.kind === kind; });
+      if (state.matchFilter !== "all") {
+        list = list.filter(function (it) { return it.matchType === state.matchFilter; });
+      }
+      if (state.tab === "sequences" && state.seqFilter !== "all") {
+        list = list.filter(function (it) { return it.seqType === state.seqFilter; });
+      }
+      list.sort(byUpdated);
+      if (!list.length) {
+        main.innerHTML = state.tab === "matches"
+          ? emptyState("No matches here yet", state.search ? "Nothing matches your search." : "Tap + to lay out a match — shine, heat, comeback, finish.")
+          : emptyState("No sequences here yet", state.search ? "Nothing matches your search." : "Tap + to bank a heat spot, comeback, or finish idea.");
+        return;
+      }
+      var stack = document.createElement("div");
+      stack.className = "stack";
+      list.forEach(function (it) {
+        var card = document.createElement("button");
+        card.className = "card";
+        card.innerHTML = cardHtml(it);
+        card.addEventListener("click", function () { openEditor(it.kind, it); });
+        stack.appendChild(card);
+      });
+      main.appendChild(stack);
+      return;
+    }
+
+    /* Move set */
+    var moves = all.filter(function (it) { return it.kind === "move"; });
+    var cats = state.moveFilter === "all"
+      ? MOVE_CATS
+      : MOVE_CATS.filter(function (c) { return c.id === state.moveFilter; });
+    var any = false;
+    cats.forEach(function (cat) {
+      var inCat = moves.filter(function (m) { return m.moveCat === cat.id; }).sort(byTitle);
+      if (!inCat.length) return;
+      any = true;
+      var group = document.createElement("section");
+      group.className = "movegroup";
+      var h = document.createElement("h2");
+      h.className = cat.cls;
+      h.innerHTML = esc(cat.label) + ' <span class="count">' + inCat.length + "</span>";
+      group.appendChild(h);
+      inCat.forEach(function (m) {
+        var row = document.createElement("button");
+        row.className = "moverow";
+        row.innerHTML =
+          '<span class="name"><span>' + esc(m.title || "Untitled") + "</span>" +
+          (m.example ? '<span class="badge example">Example</span>' : "") +
+          "</span>" +
+          (m.notes ? '<span class="note">' + esc(m.notes) + "</span>" : "");
+        row.addEventListener("click", function () { openEditor("move", m); });
+        group.appendChild(row);
+      });
+      main.appendChild(group);
+    });
+    if (!any) {
+      main.innerHTML = emptyState("No moves banked yet",
+        state.search ? "Nothing matches your search." : "Tap + to add a move and file it as high impact, fake finish, or finish.");
+    }
+  }
+
+  function renderTabs() {
+    document.querySelectorAll(".tab").forEach(function (t) {
+      t.classList.toggle("on", t.dataset.tab === state.tab);
+    });
+  }
+
+  function render() {
+    renderTabs();
+    renderFilters();
+    renderList();
+  }
+
+  /* ---------- Overlays ---------- */
+  function closeOverlay() {
+    $("#overlays").innerHTML = "";
+    editing = null;
+    deleteArmed = false;
+  }
+  function sheet(titleText, bodyBuilder) {
+    var wrap = $("#overlays");
+    wrap.innerHTML = "";
+    var scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.addEventListener("click", closeOverlay);
+    var box = document.createElement("div");
+    box.className = "sheet";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-label", titleText);
+    var head = document.createElement("div");
+    head.className = "shead";
+    var h = document.createElement("h2");
+    h.textContent = titleText;
+    var x = document.createElement("button");
+    x.className = "iconbtn";
+    x.setAttribute("aria-label", "Close");
+    x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>';
+    x.addEventListener("click", closeOverlay);
+    head.appendChild(h);
+    head.appendChild(x);
+    var body = document.createElement("div");
+    body.className = "sbody";
+    bodyBuilder(body);
+    box.appendChild(head);
+    box.appendChild(body);
+    wrap.appendChild(scrim);
+    wrap.appendChild(box);
+    return box;
+  }
+
+  function segControl(labelText, options, value, onPick) {
+    var field = document.createElement("div");
+    field.className = "field";
+    var lab = document.createElement("label");
+    lab.textContent = labelText;
+    field.appendChild(lab);
+    var seg = document.createElement("div");
+    seg.className = "seg";
+    var current = value;
+    options.forEach(function (opt) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = opt.label;
+      b.className = current === opt.id ? "on" : "";
+      b.addEventListener("click", function () {
+        current = opt.id;
+        Array.prototype.forEach.call(seg.children, function (c) { c.className = ""; });
+        b.className = "on";
+        onPick(opt.id);
+      });
+      seg.appendChild(b);
+    });
+    field.appendChild(seg);
+    return field;
+  }
+
+  function openEditor(kind, item) {
+    var tabForKind = { match: "matches", sequence: "sequences", move: "moves" };
+    var isNew = !item;
+    var draft = {
+      matchType: item ? item.matchType : (state.matchFilter !== "all" ? state.matchFilter : "singles"),
+      seqType: item ? item.seqType : (state.seqFilter !== "all" ? state.seqFilter : "heel-heat"),
+      moveCat: item ? item.moveCat : (state.moveFilter !== "all" ? state.moveFilter : "high-impact")
+    };
+    deleteArmed = false;
+    var titleText = isNew ? NEW_LABEL[tabForKind[kind]] : EDIT_LABEL[tabForKind[kind]];
+
+    sheet(titleText, function (body) {
+      var titleField = document.createElement("div");
+      titleField.className = "field";
+      var lab = document.createElement("label");
+      lab.setAttribute("for", "f-title");
+      lab.textContent = kind === "move" ? "Move name" : "Title";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.id = "f-title";
+      input.autocomplete = "off";
+      input.placeholder = kind === "move" ? "e.g. Death Valley Driver" : "e.g. Main event vs. champ, spot fest opener…";
+      input.value = item ? (item.title || "") : "";
+      titleField.appendChild(lab);
+      titleField.appendChild(input);
+      body.appendChild(titleField);
+
+      if (kind === "sequence") {
+        body.appendChild(segControl("Sequence type", SEQ_TYPES, draft.seqType, function (v) { draft.seqType = v; }));
+      }
+      if (kind === "match" || kind === "sequence") {
+        body.appendChild(segControl("Match type", MATCH_TYPES, draft.matchType, function (v) { draft.matchType = v; }));
+      }
+      if (kind === "move") {
+        body.appendChild(segControl("Category", MOVE_CATS, draft.moveCat, function (v) { draft.moveCat = v; }));
+      }
+
+      var notesField = document.createElement("div");
+      notesField.className = "field";
+      var nlab = document.createElement("label");
+      nlab.setAttribute("for", "f-notes");
+      nlab.textContent = "Notes";
+      var ta = document.createElement("textarea");
+      ta.id = "f-notes";
+      ta.placeholder = NOTE_PLACEHOLDER[kind];
+      ta.value = item ? (item.notes || "") : "";
+      notesField.appendChild(nlab);
+      notesField.appendChild(ta);
+      body.appendChild(notesField);
+
+      var save = document.createElement("button");
+      save.className = "btn";
+      save.textContent = "Save";
+      save.addEventListener("click", function () {
+        var title = input.value.trim();
+        if (!title) { toast(kind === "move" ? "Give the move a name" : "Give it a title"); input.focus(); return; }
+        var now = Date.now();
+        var next = {
+          id: item ? item.id : uid(),
+          kind: kind,
+          title: title,
+          notes: ta.value.trim(),
+          createdAt: item ? (item.createdAt || now) : now,
+          updatedAt: now
+        };
+        if (kind === "match" || kind === "sequence") next.matchType = draft.matchType;
+        if (kind === "sequence") next.seqType = draft.seqType;
+        if (kind === "move") next.moveCat = draft.moveCat;
+        closeOverlay();
+        saveItem(next);
+        toast(isNew ? "Added" : "Saved");
+      });
+      body.appendChild(save);
+
+      if (!isNew) {
+        var del = document.createElement("button");
+        del.className = "btn danger";
+        del.textContent = "Delete";
+        del.addEventListener("click", function () {
+          if (!deleteArmed) {
+            deleteArmed = true;
+            del.textContent = "Tap again to delete for good";
+            return;
+          }
+          closeOverlay();
+          removeItem(item.id);
+          toast("Deleted");
+        });
+        body.appendChild(del);
+      }
+
+      setTimeout(function () { if (isNew) input.focus(); }, 60);
+    });
+  }
+
+  function openMenu() {
+    sheet("Ring General", function (body) {
+      var wrap = document.createElement("div");
+      wrap.className = "menuline";
+
+      var exportBtn = document.createElement("button");
+      exportBtn.className = "btn ghost";
+      exportBtn.textContent = "Export notes (JSON)";
+      exportBtn.addEventListener("click", openExport);
+
+      var importBtn = document.createElement("button");
+      importBtn.className = "btn ghost";
+      importBtn.textContent = "Import notes (JSON)";
+      importBtn.addEventListener("click", openImport);
+
+      wrap.appendChild(exportBtn);
+      wrap.appendChild(importBtn);
+      body.appendChild(wrap);
+
+      var note = document.createElement("p");
+      note.className = "storagenote";
+      note.textContent = storage.mode === "db"
+        ? "Synced to your Claude storage — your notes follow you across devices."
+        : "Stored on this device in this browser. Export now and then to keep a backup.";
+      body.appendChild(note);
+    });
+  }
+
+  function openExport() {
+    var data = JSON.stringify(Array.from(items.values()), null, 2);
+    sheet("Export", function (body) {
+      body.classList.add("transfer");
+      var hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Copy this and keep it anywhere safe — paste it back with Import to restore or move devices.";
+      var ta = document.createElement("textarea");
+      ta.id = "export-json";
+      ta.readOnly = true;
+      ta.value = data;
+      var copy = document.createElement("button");
+      copy.className = "btn";
+      copy.textContent = "Copy to clipboard";
+      copy.addEventListener("click", function () {
+        var done = function () { toast("Copied"); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(data).then(done, function () { ta.select(); toast("Select and copy manually"); });
+        } else {
+          ta.select();
+          try { document.execCommand("copy"); done(); } catch (e) { toast("Select and copy manually"); }
+        }
+      });
+      body.appendChild(hint);
+      body.appendChild(ta);
+      body.appendChild(copy);
+    });
+  }
+
+  function openImport() {
+    sheet("Import", function (body) {
+      body.classList.add("transfer");
+      var hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = "Paste a previous export. Notes merge in by id — nothing here gets deleted.";
+      var ta = document.createElement("textarea");
+      ta.id = "import-json";
+      ta.placeholder = "[ … ]";
+      var go = document.createElement("button");
+      go.className = "btn";
+      go.textContent = "Import";
+      go.addEventListener("click", function () {
+        var arr;
+        try { arr = JSON.parse(ta.value); } catch (e) { toast("That isn't valid JSON"); return; }
+        if (!Array.isArray(arr)) { toast("Expected a list of notes"); return; }
+        var ok = arr.filter(function (it) {
+          return it && typeof it === "object" && it.id &&
+            (it.kind === "match" || it.kind === "sequence" || it.kind === "move");
+        });
+        if (!ok.length) { toast("No wrestling notes found in that JSON"); return; }
+        closeOverlay();
+        ok.forEach(function (it) { items.set(it.id, it); });
+        render();
+        if (storage.db) {
+          var db = storage.db;
+          Promise.all(ok.map(function (it) { return db.doc("items/" + it.id).set(it); }))
+            .then(function () { toast("Imported " + ok.length + " notes"); })
+            .catch(function () { toast("Imported, but some didn't sync"); });
+        } else {
+          localSave();
+          toast("Imported " + ok.length + " notes");
+        }
+      });
+      body.appendChild(hint);
+      body.appendChild(ta);
+      body.appendChild(go);
+    });
+  }
+
+  /* ---------- Wiring ---------- */
+  document.querySelectorAll(".tab").forEach(function (t) {
+    t.addEventListener("click", function () {
+      state.tab = t.dataset.tab;
+      render();
+    });
+  });
+  $("#fab").addEventListener("click", function () {
+    openEditor(TAB_KIND[state.tab], null);
+  });
+  $("#menuBtn").addEventListener("click", openMenu);
+  $("#searchBtn").addEventListener("click", function () {
+    state.searchOpen = !state.searchOpen;
+    $("#searchRow").classList.toggle("open", state.searchOpen);
+    $("#searchBtn").classList.toggle("active", state.searchOpen);
+    if (state.searchOpen) {
+      $("#searchInput").focus();
+    } else {
+      state.search = "";
+      $("#searchInput").value = "";
+      render();
+    }
+  });
+  $("#searchInput").addEventListener("input", function (e) {
+    state.search = e.target.value.trim();
+    renderList();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeOverlay();
+  });
+
+  /* ---------- Boot ---------- */
+  var loaded = localLoad();
+  if (loaded && loaded.length) {
+    setAll(loaded);
+  } else if (!lsGet(LS_SEEDED)) {
+    setAll(exampleItems());
+    localSave();
+    lsSet(LS_SEEDED, "1");
+  }
+  render();
+  connectDb();
+
+  if ("serviceWorker" in navigator && !window.claude && location.protocol === "https:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./sw.js").catch(function () {});
+    });
+  }
+})();
+</script>
+<!-- body:end -->
+</body>
+</html>
