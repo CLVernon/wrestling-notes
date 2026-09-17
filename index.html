@@ -29,6 +29,8 @@
     --heat-soft: rgba(224, 82, 82, 0.14);
     --comeback: #58a8dd;
     --comeback-soft: rgba(88, 168, 221, 0.14);
+    --start: #5abf8e;
+    --start-soft: rgba(90, 191, 142, 0.14);
     --impact: #dd7440;
     --impact-soft: rgba(221, 116, 64, 0.14);
     --fake: #b78ae0;
@@ -198,6 +200,7 @@
     color: var(--muted);
     background: var(--raised);
   }
+  .badge.start { color: var(--start); background: var(--start-soft); }
   .badge.heat { color: var(--heat); background: var(--heat-soft); }
   .badge.comeback { color: var(--comeback); background: var(--comeback-soft); }
   .badge.finish { color: var(--gold); background: var(--gold-soft); }
@@ -522,6 +525,7 @@
     { id: "triple", label: "Triple Threat" }
   ];
   var SEQ_TYPES = [
+    { id: "start", label: "Start", cls: "start" },
     { id: "heel-heat", label: "Heel Heat", cls: "heat" },
     { id: "comeback", label: "Comeback", cls: "comeback" },
     { id: "finish", label: "Finish", cls: "finish" }
