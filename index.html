@@ -35,6 +35,8 @@
     --impact-soft: rgba(221, 116, 64, 0.14);
     --fake: #b78ae0;
     --fake-soft: rgba(183, 138, 224, 0.14);
+    --learn: #56c4cf;
+    --learn-soft: rgba(86, 196, 207, 0.14);
     --danger: #e05252;
     --font-display: "Oswald", "Arial Narrow", "Helvetica Neue", sans-serif;
     --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -206,6 +208,7 @@
   .badge.finish { color: var(--gold); background: var(--gold-soft); }
   .badge.impact { color: var(--impact); background: var(--impact-soft); }
   .badge.fake { color: var(--fake); background: var(--fake-soft); }
+  .badge.learn { color: var(--learn); background: var(--learn-soft); }
   .badge.example { color: var(--faint); background: none; border: 1px dashed var(--line); }
   .card .preview {
     margin: 0;
@@ -236,6 +239,7 @@
   .movegroup h2.impact { color: var(--impact); }
   .movegroup h2.fake { color: var(--fake); }
   .movegroup h2.finish { color: var(--gold); }
+  .movegroup h2.learn { color: var(--learn); }
   .moverow {
     width: 100%;
     text-align: left;
@@ -533,7 +537,8 @@
   var MOVE_CATS = [
     { id: "high-impact", label: "High Impact", cls: "impact" },
     { id: "fake-finish", label: "Fake Finish", cls: "fake" },
-    { id: "finish", label: "Finish", cls: "finish" }
+    { id: "finish", label: "Finish", cls: "finish" },
+    { id: "to-learn", label: "To Learn", section: "Moves to Learn", cls: "learn" }
   ];
   var TAB_KIND = { matches: "match", sequences: "sequence", moves: "move" };
   var NEW_LABEL = { matches: "New Match", sequences: "New Sequence", moves: "New Move" };
@@ -960,7 +965,7 @@
       group.className = "movegroup";
       var h = document.createElement("h2");
       h.className = cat.cls;
-      h.innerHTML = esc(cat.label) + ' <span class="count">' + inCat.length + "</span>";
+      h.innerHTML = esc(cat.section || cat.label) + ' <span class="count">' + inCat.length + "</span>";
       group.appendChild(h);
       inCat.forEach(function (m) {
         var row = document.createElement("button");
