@@ -12,8 +12,19 @@ no app store, installs straight to your phone's home screen and works offline.
 - Matches and sequences are both grouped by match type: **Singles**, **Tag**,
   or **Triple Threat** (filter chips at the top).
 - **Move Set** — your moves, categorised as **High Impact**, **Fake Finish**,
-  or **Finish**.
-- Search within a tab, and JSON export/import for backups or moving devices.
+  **Finish**, or **Moves to Learn**.
+- **Match builder** — a match carries an ordered rundown of sequences from
+  your library plus its key moves, with opponent and show fields. Browse and
+  add from pickers, reorder, duplicate a match as a template for the next
+  town.
+- **Run sheet** — a full-screen, big-type, read-only rundown of one match
+  (notes plus its sequences in order) for the backstage read-through; keeps
+  the screen awake where the browser allows it.
+- Sequences and moves show which matches use them, and a move filed under
+  Moves to Learn can be promoted to its real category with one tap once it's
+  ring-ready.
+- Search within a tab (titles, notes, opponents, shows), and JSON
+  export/import for backups or moving devices.
 
 ## Running it
 

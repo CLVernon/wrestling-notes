@@ -401,6 +401,145 @@
   }
   .viewnotes.none { color: var(--faint); }
   .viewmeta { margin: 0; color: var(--faint); font-size: 13px; }
+  .viewmeta.vs { color: var(--muted); font-size: 14.5px; font-weight: 600; }
+  .viewlabel {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .layer { position: fixed; inset: 0; z-index: 40; }
+  .pickedlist { display: flex; flex-direction: column; gap: 8px; }
+  .pickedlist:not(:empty) { margin-bottom: 8px; }
+  .picked {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 9px 10px;
+  }
+  button.picked:active { background: var(--raised); }
+  .picked .num {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--gold);
+    min-width: 18px;
+    text-align: center;
+    flex: 0 0 auto;
+  }
+  .picked .ptitle {
+    flex: 1;
+    min-width: 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .picked .badge { flex: 0 0 auto; }
+  .ptitle.gone, .chipbtn.gone { color: var(--faint); font-style: italic; }
+  .picked .pbtn {
+    width: 30px; height: 30px;
+    flex: 0 0 auto;
+    display: grid; place-items: center;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .picked .pbtn:disabled { opacity: 0.35; }
+  .rundown { display: flex; flex-direction: column; gap: 8px; }
+  .chipbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chipbtn {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 13px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+  }
+  .chipbtn:active { background: var(--raised); }
+  .btn.small { padding: 9px; font-size: 14px; }
+  .vsline { margin: 0; color: var(--muted); font-size: 13.5px; font-weight: 600; }
+  .pickbody .moverow .note {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ---------- Run sheet ---------- */
+  .runsheet {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    overflow-y: auto;
+    padding: 24px 20px 80px;
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+  }
+  .runsheet .inner {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .runsheet h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding-right: 52px;
+    text-wrap: balance;
+  }
+  .rs-vs { margin: 0; color: var(--muted); font-size: 16px; font-weight: 600; }
+  .rs-notes {
+    margin: 0;
+    white-space: pre-line;
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .rs-seq {
+    border-top: 1px solid var(--line-soft);
+    padding-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .rs-seq h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 21px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .rs-seq h3 .num { color: var(--gold); }
+  .runsheet-close {
+    position: fixed;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    right: max(14px, calc(50vw - 320px + 14px));
+    background: var(--raised);
+    border: 1px solid var(--line);
+    z-index: 1;
+    color: var(--text);
+  }
   .seg { display: flex; gap: 8px; flex-wrap: wrap; }
   .seg button {
     padding: 8px 14px;
@@ -609,6 +748,10 @@
         id: "example-match-1", kind: "match", example: true,
         title: "Opener vs. local babyface",
         matchType: "singles",
+        opponent: "Local babyface",
+        show: "Saturday live show",
+        sequenceIds: ["example-seq-heat"],
+        moveIds: ["example-move-2", "example-move-3"],
         notes: "Lock-up, back him to the ropes, cheap shot on the break.\nShine: face runs armdrags, I bail to the floor to cut the heat.\nCut-off: catch him off the apron, back-first into the post.\nHeat: work the back — backbreaker, bearhug spot, cut off first comeback.\nComeback: boot up in the corner, three lariats, crowd up.\nFalse finish: superkick, long 2.9.\nFinish: low bridge escape, roll-up with tights.",
         createdAt: now - 3600000, updatedAt: now - 3600000
       },
@@ -852,7 +995,9 @@
     if (!state.search) return true;
     var q = state.search.toLowerCase();
     return (it.title || "").toLowerCase().indexOf(q) >= 0 ||
-           (it.notes || "").toLowerCase().indexOf(q) >= 0;
+           (it.notes || "").toLowerCase().indexOf(q) >= 0 ||
+           (it.opponent || "").toLowerCase().indexOf(q) >= 0 ||
+           (it.show || "").toLowerCase().indexOf(q) >= 0;
   }
   var toastTimer = null;
   function toast(msg) {
@@ -911,10 +1056,19 @@
       badges += badgeHtml(clsOf(SEQ_TYPES, it.seqType), labelOf(SEQ_TYPES, it.seqType));
     }
     if (it.matchType) badges += badgeHtml("", labelOf(MATCH_TYPES, it.matchType));
+    if (it.kind === "match" && it.sequenceIds && it.sequenceIds.length) {
+      badges += badgeHtml("", it.sequenceIds.length + (it.sequenceIds.length === 1 ? " sequence" : " sequences"));
+    }
     if (it.example) badges += badgeHtml("example", "Example");
+    var vsline = "";
+    if (it.kind === "match" && (it.opponent || it.show)) {
+      vsline = '<p class="vsline">' +
+        esc([it.opponent ? "vs " + it.opponent : "", it.show || ""].filter(Boolean).join(" · ")) + "</p>";
+    }
     return (
       '<div class="titleline"><h3>' + esc(it.title || "Untitled") + "</h3>" +
       '<span class="when">' + esc(fmtDate(it.updatedAt)) + "</span></div>" +
+      vsline +
       '<div class="badges">' + badges + "</div>" +
       (it.notes ? '<p class="preview">' + esc(it.notes) + "</p>" : "")
     );
@@ -1008,18 +1162,25 @@
     renderList();
   }
 
-  /* ---------- Overlays ---------- */
+  /* ---------- Overlays (stacked: a picker can open on top of the editor) ---------- */
   function closeOverlay() {
     $("#overlays").innerHTML = "";
     editing = null;
     deleteArmed = false;
+    releaseWake();
+  }
+  function closeTop() {
+    var o = $("#overlays");
+    if (o.lastElementChild) o.lastElementChild.remove();
+    if (!document.querySelector(".runsheet")) releaseWake();
+    if (!o.children.length) { editing = null; deleteArmed = false; }
   }
   function sheet(titleText, bodyBuilder) {
-    var wrap = $("#overlays");
-    wrap.innerHTML = "";
+    var layer = document.createElement("div");
+    layer.className = "layer";
     var scrim = document.createElement("div");
     scrim.className = "scrim";
-    scrim.addEventListener("click", closeOverlay);
+    scrim.addEventListener("click", closeTop);
     var box = document.createElement("div");
     box.className = "sheet";
     box.setAttribute("role", "dialog");
@@ -1032,7 +1193,7 @@
     x.className = "iconbtn";
     x.setAttribute("aria-label", "Close");
     x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>';
-    x.addEventListener("click", closeOverlay);
+    x.addEventListener("click", closeTop);
     head.appendChild(h);
     head.appendChild(x);
     var body = document.createElement("div");
@@ -1040,8 +1201,9 @@
     bodyBuilder(body);
     box.appendChild(head);
     box.appendChild(body);
-    wrap.appendChild(scrim);
-    wrap.appendChild(box);
+    layer.appendChild(scrim);
+    layer.appendChild(box);
+    $("#overlays").appendChild(layer);
     return box;
   }
 
@@ -1071,6 +1233,235 @@
     return field;
   }
 
+  function getItem(id) {
+    var it = items.get(id);
+    return it && !it.deleted ? it : null;
+  }
+  function matchesUsing(id, field) {
+    return Array.from(items.values()).filter(alive).filter(function (it) {
+      return it.kind === "match" && Array.isArray(it[field]) && it[field].indexOf(id) >= 0;
+    }).sort(byUpdated);
+  }
+
+  /* ---------- Screen wake lock (run sheet) ---------- */
+  var wakeLock = null;
+  function acquireWake() {
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request("screen").then(function (l) { wakeLock = l; }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+  function releaseWake() {
+    try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && document.querySelector(".runsheet")) acquireWake();
+  });
+
+  /* ---------- Pickers (stack on top of the editor) ---------- */
+  function openSequencePicker(draft, onDone) {
+    sheet("Add Sequence", function (body) {
+      body.classList.add("pickbody");
+      var pool = Array.from(items.values()).filter(alive).filter(function (it) {
+        return it.kind === "sequence" && draft.sequenceIds.indexOf(it.id) < 0;
+      }).sort(byUpdated);
+      if (!pool.length) {
+        var p = document.createElement("p");
+        p.className = "hint";
+        p.textContent = "No sequences left to add — bank some in the Sequences tab first.";
+        body.appendChild(p);
+        return;
+      }
+      var mine = pool.filter(function (s) { return s.matchType === draft.matchType; });
+      var others = pool.filter(function (s) { return s.matchType !== draft.matchType; });
+      function addRows(list) {
+        list.forEach(function (s) {
+          var row = document.createElement("button");
+          row.className = "moverow";
+          row.innerHTML = '<span class="name"><span>' + esc(s.title || "Untitled") + "</span></span>" +
+            '<span class="badges">' +
+            badgeHtml(clsOf(SEQ_TYPES, s.seqType), labelOf(SEQ_TYPES, s.seqType)) +
+            badgeHtml("", labelOf(MATCH_TYPES, s.matchType)) + "</span>" +
+            (s.notes ? '<span class="note">' + esc(s.notes) + "</span>" : "");
+          row.addEventListener("click", function () {
+            draft.sequenceIds.push(s.id);
+            closeTop();
+            onDone();
+          });
+          body.appendChild(row);
+        });
+      }
+      addRows(mine);
+      if (others.length) {
+        var lab = document.createElement("p");
+        lab.className = "viewlabel";
+        lab.textContent = "Other match types";
+        body.appendChild(lab);
+        addRows(others);
+      }
+    });
+  }
+  function openMovePicker(draft, onDone) {
+    sheet("Add Move", function (body) {
+      body.classList.add("pickbody");
+      var pool = Array.from(items.values()).filter(alive).filter(function (it) {
+        return it.kind === "move" && draft.moveIds.indexOf(it.id) < 0;
+      }).sort(byTitle);
+      if (!pool.length) {
+        var p = document.createElement("p");
+        p.className = "hint";
+        p.textContent = "No moves left to add — bank more in the Move Set tab.";
+        body.appendChild(p);
+        return;
+      }
+      MOVE_CATS.forEach(function (cat) {
+        var inCat = pool.filter(function (m) { return m.moveCat === cat.id; });
+        if (!inCat.length) return;
+        var lab = document.createElement("p");
+        lab.className = "viewlabel";
+        lab.textContent = cat.section || cat.label;
+        body.appendChild(lab);
+        inCat.forEach(function (m) {
+          var row = document.createElement("button");
+          row.className = "moverow";
+          row.innerHTML = '<span class="name"><span>' + esc(m.title || "Untitled") + "</span>" +
+            '<span class="badge ' + clsOf(MOVE_CATS, m.moveCat) + '">' + esc(labelOf(MOVE_CATS, m.moveCat)) + "</span></span>" +
+            (m.notes ? '<span class="note">' + esc(m.notes) + "</span>" : "");
+          row.addEventListener("click", function () {
+            draft.moveIds.push(m.id);
+            closeTop();
+            onDone();
+          });
+          body.appendChild(row);
+        });
+      });
+    });
+  }
+
+  /* ---------- Editor section for a match's picked sequences / moves ---------- */
+  function pickedSection(labelText, ids, addLabel, pickerFn) {
+    var field = document.createElement("div");
+    field.className = "field";
+    var lab = document.createElement("label");
+    lab.textContent = labelText;
+    field.appendChild(lab);
+    var list = document.createElement("div");
+    list.className = "pickedlist";
+    field.appendChild(list);
+    function redraw() {
+      list.innerHTML = "";
+      ids.forEach(function (id, idx) {
+        var it = getItem(id);
+        var row = document.createElement("div");
+        row.className = "picked";
+        var t = document.createElement("span");
+        t.className = "ptitle" + (it ? "" : " gone");
+        t.textContent = it ? (it.title || "Untitled") : "(removed)";
+        row.appendChild(t);
+        if (it && it.kind === "sequence" && it.seqType) {
+          var b = document.createElement("span");
+          b.className = "badge " + clsOf(SEQ_TYPES, it.seqType);
+          b.textContent = labelOf(SEQ_TYPES, it.seqType);
+          row.appendChild(b);
+        }
+        if (it && it.kind === "move" && it.moveCat) {
+          var mb = document.createElement("span");
+          mb.className = "badge " + clsOf(MOVE_CATS, it.moveCat);
+          mb.textContent = labelOf(MOVE_CATS, it.moveCat);
+          row.appendChild(mb);
+        }
+        [["↑", idx === 0, -1], ["↓", idx === ids.length - 1, 1]].forEach(function (c) {
+          var mv = document.createElement("button");
+          mv.type = "button";
+          mv.className = "pbtn";
+          mv.textContent = c[0];
+          mv.disabled = c[1];
+          mv.setAttribute("aria-label", c[2] < 0 ? "Move up" : "Move down");
+          mv.addEventListener("click", function () {
+            var j = idx + c[2];
+            var tmp = ids[idx]; ids[idx] = ids[j]; ids[j] = tmp;
+            redraw();
+          });
+          row.appendChild(mv);
+        });
+        var del = document.createElement("button");
+        del.type = "button";
+        del.className = "pbtn";
+        del.textContent = "✕";
+        del.setAttribute("aria-label", "Remove");
+        del.addEventListener("click", function () { ids.splice(idx, 1); redraw(); });
+        row.appendChild(del);
+        list.appendChild(row);
+      });
+    }
+    redraw();
+    var add = document.createElement("button");
+    add.type = "button";
+    add.className = "btn ghost small";
+    add.textContent = addLabel;
+    add.addEventListener("click", function () { pickerFn(redraw); });
+    field.appendChild(add);
+    return field;
+  }
+
+  /* ---------- Run sheet: full-screen rundown for the backstage read ---------- */
+  function openRunSheet(item) {
+    var layer = document.createElement("div");
+    layer.className = "layer";
+    var box = document.createElement("div");
+    box.className = "runsheet";
+    var close = document.createElement("button");
+    close.className = "iconbtn runsheet-close";
+    close.setAttribute("aria-label", "Close run sheet");
+    close.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>';
+    close.addEventListener("click", closeTop);
+    var inner = document.createElement("div");
+    inner.className = "inner";
+    var h = document.createElement("h1");
+    h.textContent = item.title || "Untitled";
+    inner.appendChild(h);
+    var vsBits = [
+      item.opponent ? "vs " + item.opponent : "",
+      item.show || "",
+      item.matchType ? labelOf(MATCH_TYPES, item.matchType) : ""
+    ].filter(Boolean);
+    if (vsBits.length) {
+      var vs = document.createElement("p");
+      vs.className = "rs-vs";
+      vs.textContent = vsBits.join(" · ");
+      inner.appendChild(vs);
+    }
+    if (item.notes) {
+      var n = document.createElement("p");
+      n.className = "rs-notes";
+      n.textContent = item.notes;
+      inner.appendChild(n);
+    }
+    (item.sequenceIds || []).forEach(function (id, idx) {
+      var seq = getItem(id);
+      if (!seq) return;
+      var s = document.createElement("div");
+      s.className = "rs-seq";
+      var sh = document.createElement("h3");
+      sh.innerHTML = '<span class="num">' + (idx + 1) + "</span> " + esc(seq.title || "Untitled") +
+        ' <span class="badge ' + clsOf(SEQ_TYPES, seq.seqType) + '">' + esc(labelOf(SEQ_TYPES, seq.seqType)) + "</span>";
+      s.appendChild(sh);
+      if (seq.notes) {
+        var sp = document.createElement("p");
+        sp.className = "rs-notes";
+        sp.textContent = seq.notes;
+        s.appendChild(sp);
+      }
+      inner.appendChild(s);
+    });
+    box.appendChild(close);
+    box.appendChild(inner);
+    layer.appendChild(box);
+    $("#overlays").appendChild(layer);
+    acquireWake();
+  }
+
   function openViewer(item) {
     var kindLabel = { match: "Match", sequence: "Sequence", move: "Move" };
     sheet(item.title || "Untitled", function (body) {
@@ -1088,6 +1479,13 @@
       badges.innerHTML = html;
       body.appendChild(badges);
 
+      if (item.kind === "match" && (item.opponent || item.show)) {
+        var vs = document.createElement("p");
+        vs.className = "viewmeta vs";
+        vs.textContent = [item.opponent ? "vs " + item.opponent : "", item.show || ""].filter(Boolean).join(" · ");
+        body.appendChild(vs);
+      }
+
       var notes = document.createElement("p");
       if (item.notes) {
         notes.className = "viewnotes";
@@ -1098,11 +1496,142 @@
       }
       body.appendChild(notes);
 
+      if (item.kind === "match" && item.sequenceIds && item.sequenceIds.length) {
+        var sec = document.createElement("div");
+        var slab = document.createElement("p");
+        slab.className = "viewlabel";
+        slab.textContent = "Rundown";
+        sec.appendChild(slab);
+        var list = document.createElement("div");
+        list.className = "rundown";
+        item.sequenceIds.forEach(function (id, idx) {
+          var seq = getItem(id);
+          var row = document.createElement("button");
+          row.className = "picked";
+          var num = document.createElement("span");
+          num.className = "num";
+          num.textContent = idx + 1;
+          row.appendChild(num);
+          var t = document.createElement("span");
+          t.className = "ptitle" + (seq ? "" : " gone");
+          t.textContent = seq ? (seq.title || "Untitled") : "(removed)";
+          row.appendChild(t);
+          if (seq && seq.seqType) {
+            var b = document.createElement("span");
+            b.className = "badge " + clsOf(SEQ_TYPES, seq.seqType);
+            b.textContent = labelOf(SEQ_TYPES, seq.seqType);
+            row.appendChild(b);
+          }
+          if (seq) row.addEventListener("click", function () { openViewer(seq); });
+          else row.disabled = true;
+          list.appendChild(row);
+        });
+        sec.appendChild(list);
+        body.appendChild(sec);
+      }
+
+      if (item.kind === "match" && item.moveIds && item.moveIds.length) {
+        var msec = document.createElement("div");
+        var mlab = document.createElement("p");
+        mlab.className = "viewlabel";
+        mlab.textContent = "Key moves";
+        msec.appendChild(mlab);
+        var chips = document.createElement("div");
+        chips.className = "chipbtns";
+        item.moveIds.forEach(function (id) {
+          var mv = getItem(id);
+          var c = document.createElement("button");
+          c.className = "chipbtn" + (mv ? "" : " gone");
+          c.textContent = mv ? (mv.title || "Untitled") : "(removed)";
+          if (mv) c.addEventListener("click", function () { openViewer(mv); });
+          else c.disabled = true;
+          chips.appendChild(c);
+        });
+        msec.appendChild(chips);
+        body.appendChild(msec);
+      }
+
+      if (item.kind === "sequence" || item.kind === "move") {
+        var used = matchesUsing(item.id, item.kind === "sequence" ? "sequenceIds" : "moveIds");
+        if (used.length) {
+          var usec = document.createElement("div");
+          var ulab = document.createElement("p");
+          ulab.className = "viewlabel";
+          ulab.textContent = "Used in";
+          usec.appendChild(ulab);
+          var uchips = document.createElement("div");
+          uchips.className = "chipbtns";
+          used.forEach(function (m) {
+            var c = document.createElement("button");
+            c.className = "chipbtn";
+            c.textContent = m.title || "Untitled";
+            c.addEventListener("click", function () { openViewer(m); });
+            uchips.appendChild(c);
+          });
+          usec.appendChild(uchips);
+          body.appendChild(usec);
+        }
+      }
+
+      if (item.kind === "move" && item.moveCat === "to-learn") {
+        var rsec = document.createElement("div");
+        var rlab = document.createElement("p");
+        rlab.className = "viewlabel";
+        rlab.textContent = "Ring-ready? File it under";
+        rsec.appendChild(rlab);
+        var seg = document.createElement("div");
+        seg.className = "seg";
+        MOVE_CATS.filter(function (c) { return c.id !== "to-learn"; }).forEach(function (cat) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.textContent = cat.label;
+          b.addEventListener("click", function () {
+            var next = Object.assign({}, item, { moveCat: cat.id, learnedAt: Date.now(), updatedAt: Date.now() });
+            delete next.example;
+            closeOverlay();
+            saveItem(next);
+            toast("Filed under " + cat.label);
+          });
+          seg.appendChild(b);
+        });
+        rsec.appendChild(seg);
+        body.appendChild(rsec);
+      }
+
       var meta = document.createElement("p");
       meta.className = "viewmeta";
-      meta.textContent = (kindLabel[item.kind] || "Note") +
-        (item.updatedAt ? " · last edited " + fmtDate(item.updatedAt) : "");
+      var metaBits = [kindLabel[item.kind] || "Note"];
+      if (item.kind === "move" && item.learnedAt && item.moveCat !== "to-learn") {
+        metaBits.push("ring-ready since " + fmtDate(item.learnedAt));
+      }
+      if (item.updatedAt) metaBits.push("last edited " + fmtDate(item.updatedAt));
+      meta.textContent = metaBits.join(" · ");
       body.appendChild(meta);
+
+      if (item.kind === "match") {
+        var run = document.createElement("button");
+        run.className = "btn ghost";
+        run.textContent = "Run sheet";
+        run.addEventListener("click", function () { openRunSheet(item); });
+        body.appendChild(run);
+
+        var dup = document.createElement("button");
+        dup.className = "btn ghost";
+        dup.textContent = "Duplicate as new match";
+        dup.addEventListener("click", function () {
+          closeOverlay();
+          openEditor("match", null, {
+            title: (item.title || "Untitled") + " (copy)",
+            matchType: item.matchType,
+            notes: item.notes || "",
+            opponent: item.opponent || "",
+            show: "",
+            sequenceIds: (item.sequenceIds || []).slice(),
+            moveIds: (item.moveIds || []).slice()
+          });
+        });
+        body.appendChild(dup);
+      }
 
       var edit = document.createElement("button");
       edit.className = "btn";
@@ -1115,18 +1644,22 @@
     });
   }
 
-  function openEditor(kind, item) {
+  function openEditor(kind, item, prefill) {
     var tabForKind = { match: "matches", sequence: "sequences", move: "moves" };
     var isNew = !item;
+    var base = item || prefill || {};
     var draft = {
-      matchType: item ? item.matchType : (state.matchFilter !== "all" ? state.matchFilter : "singles"),
-      seqType: item ? item.seqType : (state.seqFilter !== "all" ? state.seqFilter : "heel-heat"),
-      moveCat: item ? item.moveCat : (state.moveFilter !== "all" ? state.moveFilter : "high-impact")
+      matchType: base.matchType || (state.matchFilter !== "all" ? state.matchFilter : "singles"),
+      seqType: base.seqType || (state.seqFilter !== "all" ? state.seqFilter : "heel-heat"),
+      moveCat: base.moveCat || (state.moveFilter !== "all" ? state.moveFilter : "high-impact"),
+      sequenceIds: (base.sequenceIds || []).slice(),
+      moveIds: (base.moveIds || []).slice()
     };
     deleteArmed = false;
     var titleText = isNew ? NEW_LABEL[tabForKind[kind]] : EDIT_LABEL[tabForKind[kind]];
 
     sheet(titleText, function (body) {
+      var oppIn = null, showIn = null;
       var titleField = document.createElement("div");
       titleField.className = "field";
       var lab = document.createElement("label");
@@ -1137,10 +1670,33 @@
       input.id = "f-title";
       input.autocomplete = "off";
       input.placeholder = kind === "move" ? "e.g. Death Valley Driver" : "e.g. Main event vs. champ, spot fest opener…";
-      input.value = item ? (item.title || "") : "";
+      input.value = base.title || "";
       titleField.appendChild(lab);
       titleField.appendChild(input);
       body.appendChild(titleField);
+
+      if (kind === "match") {
+        [
+          { id: "f-opponent", label: "Opponent", ph: "Who's across the ring (optional)", val: base.opponent || "" },
+          { id: "f-show", label: "Show", ph: "Event / date (optional)", val: base.show || "" }
+        ].forEach(function (cfg) {
+          var f = document.createElement("div");
+          f.className = "field";
+          var l = document.createElement("label");
+          l.setAttribute("for", cfg.id);
+          l.textContent = cfg.label;
+          var inp = document.createElement("input");
+          inp.type = "text";
+          inp.id = cfg.id;
+          inp.autocomplete = "off";
+          inp.placeholder = cfg.ph;
+          inp.value = cfg.val;
+          f.appendChild(l);
+          f.appendChild(inp);
+          body.appendChild(f);
+          if (cfg.id === "f-opponent") oppIn = inp; else showIn = inp;
+        });
+      }
 
       if (kind === "sequence") {
         body.appendChild(segControl("Sequence type", SEQ_TYPES, draft.seqType, function (v) { draft.seqType = v; }));
@@ -1152,6 +1708,15 @@
         body.appendChild(segControl("Category", MOVE_CATS, draft.moveCat, function (v) { draft.moveCat = v; }));
       }
 
+      if (kind === "match") {
+        body.appendChild(pickedSection("Sequences", draft.sequenceIds, "+ Add sequence", function (done) {
+          openSequencePicker(draft, done);
+        }));
+        body.appendChild(pickedSection("Key moves", draft.moveIds, "+ Add move", function (done) {
+          openMovePicker(draft, done);
+        }));
+      }
+
       var notesField = document.createElement("div");
       notesField.className = "field";
       var nlab = document.createElement("label");
@@ -1160,7 +1725,7 @@
       var ta = document.createElement("textarea");
       ta.id = "f-notes";
       ta.placeholder = NOTE_PLACEHOLDER[kind];
-      ta.value = item ? (item.notes || "") : "";
+      ta.value = base.notes || "";
       notesField.appendChild(nlab);
       notesField.appendChild(ta);
       body.appendChild(notesField);
@@ -1183,6 +1748,13 @@
         if (kind === "match" || kind === "sequence") next.matchType = draft.matchType;
         if (kind === "sequence") next.seqType = draft.seqType;
         if (kind === "move") next.moveCat = draft.moveCat;
+        if (kind === "match") {
+          next.opponent = oppIn ? oppIn.value.trim() : "";
+          next.show = showIn ? showIn.value.trim() : "";
+          next.sequenceIds = draft.sequenceIds.slice();
+          next.moveIds = draft.moveIds.slice();
+        }
+        if (kind === "move" && item && item.learnedAt) next.learnedAt = item.learnedAt;
         closeOverlay();
         saveItem(next);
         toast(isNew ? "Added" : "Saved");
@@ -1427,7 +1999,7 @@
     renderList();
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeOverlay();
+    if (e.key === "Escape") closeTop();
   });
 
   /* ---------- Boot ---------- */
