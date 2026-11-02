@@ -390,7 +390,17 @@
     padding: 11px 13px;
   }
   .field input::placeholder, .field textarea::placeholder { color: var(--faint); }
-  .field textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+  .field textarea { min-height: min(45dvh, 360px); resize: vertical; line-height: 1.55; }
+  .viewnotes {
+    margin: 0;
+    white-space: pre-line;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .viewnotes.none { color: var(--faint); }
+  .viewmeta { margin: 0; color: var(--faint); font-size: 13px; }
   .seg { display: flex; gap: 8px; flex-wrap: wrap; }
   .seg button {
     padding: 8px 14px;
@@ -944,7 +954,7 @@
         var card = document.createElement("button");
         card.className = "card";
         card.innerHTML = cardHtml(it);
-        card.addEventListener("click", function () { openEditor(it.kind, it); });
+        card.addEventListener("click", function () { openViewer(it); });
         stack.appendChild(card);
       });
       main.appendChild(stack);
@@ -975,7 +985,7 @@
           (m.example ? '<span class="badge example">Example</span>' : "") +
           "</span>" +
           (m.notes ? '<span class="note">' + esc(m.notes) + "</span>" : "");
-        row.addEventListener("click", function () { openEditor("move", m); });
+        row.addEventListener("click", function () { openViewer(m); });
         group.appendChild(row);
       });
       main.appendChild(group);
@@ -1059,6 +1069,50 @@
     });
     field.appendChild(seg);
     return field;
+  }
+
+  function openViewer(item) {
+    var kindLabel = { match: "Match", sequence: "Sequence", move: "Move" };
+    sheet(item.title || "Untitled", function (body) {
+      var badges = document.createElement("div");
+      badges.className = "badges";
+      var html = "";
+      if (item.kind === "sequence" && item.seqType) {
+        html += badgeHtml(clsOf(SEQ_TYPES, item.seqType), labelOf(SEQ_TYPES, item.seqType));
+      }
+      if (item.kind === "move" && item.moveCat) {
+        html += badgeHtml(clsOf(MOVE_CATS, item.moveCat), labelOf(MOVE_CATS, item.moveCat));
+      }
+      if (item.matchType) html += badgeHtml("", labelOf(MATCH_TYPES, item.matchType));
+      if (item.example) html += badgeHtml("example", "Example");
+      badges.innerHTML = html;
+      body.appendChild(badges);
+
+      var notes = document.createElement("p");
+      if (item.notes) {
+        notes.className = "viewnotes";
+        notes.textContent = item.notes;
+      } else {
+        notes.className = "viewnotes none";
+        notes.textContent = "No notes yet.";
+      }
+      body.appendChild(notes);
+
+      var meta = document.createElement("p");
+      meta.className = "viewmeta";
+      meta.textContent = (kindLabel[item.kind] || "Note") +
+        (item.updatedAt ? " · last edited " + fmtDate(item.updatedAt) : "");
+      body.appendChild(meta);
+
+      var edit = document.createElement("button");
+      edit.className = "btn";
+      edit.textContent = "Edit";
+      edit.addEventListener("click", function () {
+        closeOverlay();
+        openEditor(item.kind, item);
+      });
+      body.appendChild(edit);
+    });
   }
 
   function openEditor(kind, item) {
