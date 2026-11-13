@@ -13,10 +13,12 @@ no app store, installs straight to your phone's home screen and works offline.
   or **Triple Threat** (filter chips at the top).
 - **Move Set** — your moves, categorised as **High Impact**, **Fake Finish**,
   **Finish**, or **Moves to Learn**.
-- **Match builder** — while editing a match, browse your sequence and move
-  libraries and insert their text straight into the notes, composing one big
-  match note. Matches also carry opponent and show fields, and can be
-  duplicated as a template for the next town.
+- **Match builder** — a match is written in typed section boxes (Start,
+  Comeback, Finish by default, with Hope Spots or extra Comebacks inserted
+  between), and sequences/moves from your libraries can be dropped into any
+  section. Viewing a match consolidates the sections into one big match note
+  — same for the run sheet and search. Matches also carry opponent and show
+  fields, and can be duplicated as a template for the next town.
 - **Run sheet** — a full-screen, big-type, read-only view of one match's
   note for the backstage read-through; keeps the screen awake where the
   browser allows it.

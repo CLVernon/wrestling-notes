@@ -449,6 +449,27 @@
   .btn.small { padding: 9px; font-size: 14px; }
   .insertrow { display: flex; gap: 8px; }
   .insertrow .btn { flex: 1; }
+  .sections { display: flex; flex-direction: column; gap: 10px; }
+  .sechead { display: flex; align-items: center; justify-content: space-between; }
+  .sechead .xbtn {
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .field .sections textarea { min-height: 120px; }
+  .insbetween { display: flex; gap: 8px; justify-content: center; padding: 2px 0; }
+  .insbetween button {
+    border: 1px dashed var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 12px;
+  }
+  .insbetween button:active { color: var(--gold); border-color: var(--gold); }
   .vsline { margin: 0; color: var(--muted); font-size: 13.5px; font-weight: 600; }
   .pickbody .moverow .note {
     display: -webkit-box;
@@ -650,6 +671,21 @@
     { id: "finish", label: "Finish", cls: "finish" },
     { id: "to-learn", label: "To Learn", section: "Moves to Learn", cls: "learn" }
   ];
+  var SECTION_TYPES = [
+    { id: "start", label: "Start", cls: "start" },
+    { id: "hope", label: "Hope Spot", cls: "fake" },
+    { id: "comeback", label: "Comeback", cls: "comeback" },
+    { id: "finish", label: "Finish", cls: "finish" }
+  ];
+  var INSERTABLE_SECTIONS = SECTION_TYPES.filter(function (t) {
+    return t.id === "hope" || t.id === "comeback";
+  });
+  var SECTION_PLACEHOLDER = {
+    start: "Lock-up, shine, cut-off, heat…",
+    hope: "Quick flurry of hope before the heel cuts it off…",
+    comeback: "Boot up, crowd up, house afire…",
+    finish: "False finish into the real finish…"
+  };
   var TAB_KIND = { matches: "match", sequences: "sequence", moves: "move" };
   var NEW_LABEL = { matches: "New Match", sequences: "New Sequence", moves: "New Move" };
   var EDIT_LABEL = { matches: "Edit Match", sequences: "Edit Sequence", moves: "Edit Move" };
@@ -704,6 +740,12 @@
   /* ---------- Example content (first run only) ---------- */
   function exampleItems() {
     var now = Date.now();
+    var exSections = [
+      { type: "start", text: "Lock-up, back him to the ropes, cheap shot on the break.\nShine: face runs armdrags, I bail to the floor to cut the heat.\nCut-off: catch him off the apron, back-first into the post.\nHeat: work the back — backbreaker, bearhug spot, cut off first comeback." },
+      { type: "hope", text: "Sunset flip out of nowhere for 2, straight back into the bearhug." },
+      { type: "comeback", text: "Boot up in the corner, three lariats, crowd up." },
+      { type: "finish", text: "False finish: superkick, long 2.9.\nFinish: low bridge escape, roll-up with tights." }
+    ];
     return [
       {
         id: "example-match-1", kind: "match", example: true,
@@ -711,7 +753,8 @@
         matchType: "singles",
         opponent: "Local babyface",
         show: "Saturday live show",
-        notes: "Lock-up, back him to the ropes, cheap shot on the break.\nShine: face runs armdrags, I bail to the floor to cut the heat.\nCut-off: catch him off the apron, back-first into the post.\nHeat: work the back — backbreaker, bearhug spot, cut off first comeback.\nComeback: boot up in the corner, three lariats, crowd up.\nFalse finish: superkick, long 2.9.\nFinish: low bridge escape, roll-up with tights.",
+        sections: exSections,
+        notes: consolidateSections(exSections),
         createdAt: now - 3600000, updatedAt: now - 3600000
       },
       {
@@ -1190,9 +1233,17 @@
 
   /* ---------- Composing match notes from the library ---------- */
   function appendToNotes(ta, text) {
+    if (!ta) return;
     var cur = ta.value.replace(/\s+$/, "");
     ta.value = cur ? cur + "\n\n" + text : text;
     ta.scrollTop = ta.scrollHeight;
+    try { ta.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
+  }
+  function consolidateSections(sections) {
+    return (sections || []).filter(function (s) { return s.text && s.text.trim(); })
+      .map(function (s) {
+        return "— " + (labelOf(SECTION_TYPES, s.type) || s.type) + " —\n" + s.text.trim();
+      }).join("\n\n");
   }
   function sequenceText(s) {
     var label = labelOf(SEQ_TYPES, s.seqType);
@@ -1424,6 +1475,9 @@
             title: (item.title || "Untitled") + " (copy)",
             matchType: item.matchType,
             notes: item.notes || "",
+            sections: (item.sections || []).map(function (s) {
+              return { type: s.type, text: s.text || "" };
+            }),
             opponent: item.opponent || "",
             show: ""
           });
@@ -1505,28 +1559,83 @@
         body.appendChild(segControl("Category", MOVE_CATS, draft.moveCat, function (v) { draft.moveCat = v; }));
       }
 
-      var notesField = document.createElement("div");
-      notesField.className = "field";
-      var nlab = document.createElement("label");
-      nlab.setAttribute("for", "f-notes");
-      nlab.textContent = "Notes";
-      var ta = document.createElement("textarea");
-      ta.id = "f-notes";
-      ta.placeholder = NOTE_PLACEHOLDER[kind];
-      ta.value = base.notes || "";
-      notesField.appendChild(nlab);
-      notesField.appendChild(ta);
-      body.appendChild(notesField);
-
+      var ta = null;
       if (kind === "match") {
+        draft.sections = (base.sections && base.sections.length
+          ? base.sections.map(function (s) { return { type: s.type, text: s.text || "" }; })
+          : [
+              { type: "start", text: base.notes || "" },
+              { type: "comeback", text: "" },
+              { type: "finish", text: "" }
+            ]);
+        var lastSecTa = null;
+        var secField = document.createElement("div");
+        secField.className = "field";
+        var secLab = document.createElement("label");
+        secLab.textContent = "Match structure";
+        secField.appendChild(secLab);
+        var secBox = document.createElement("div");
+        secBox.className = "sections";
+        secField.appendChild(secBox);
+        var renderSections = function () {
+          lastSecTa = null;
+          secBox.innerHTML = "";
+          draft.sections.forEach(function (sec, i) {
+            var head = document.createElement("div");
+            head.className = "sechead";
+            var tag = document.createElement("span");
+            tag.className = "badge " + (clsOf(SECTION_TYPES, sec.type) || "");
+            tag.textContent = labelOf(SECTION_TYPES, sec.type) || sec.type;
+            head.appendChild(tag);
+            if (sec.type !== "start" && sec.type !== "finish") {
+              var x = document.createElement("button");
+              x.type = "button";
+              x.className = "xbtn";
+              x.textContent = "✕";
+              x.setAttribute("aria-label", "Remove section");
+              x.addEventListener("click", function () {
+                draft.sections.splice(i, 1);
+                renderSections();
+              });
+              head.appendChild(x);
+            }
+            secBox.appendChild(head);
+            var sta = document.createElement("textarea");
+            sta.id = "f-sec-" + i;
+            sta.placeholder = SECTION_PLACEHOLDER[sec.type] || "";
+            sta.value = sec.text;
+            sta.addEventListener("input", function () { sec.text = sta.value; });
+            sta.addEventListener("focus", function () { lastSecTa = sta; });
+            secBox.appendChild(sta);
+            if (i < draft.sections.length - 1) {
+              var ins = document.createElement("div");
+              ins.className = "insbetween";
+              INSERTABLE_SECTIONS.forEach(function (t) {
+                var b = document.createElement("button");
+                b.type = "button";
+                b.textContent = "+ " + t.label;
+                b.addEventListener("click", function () {
+                  draft.sections.splice(i + 1, 0, { type: t.id, text: "" });
+                  renderSections();
+                });
+                ins.appendChild(b);
+              });
+              secBox.appendChild(ins);
+            }
+          });
+        };
+        renderSections();
+        body.appendChild(secField);
+
+        var targetTa = function () { return lastSecTa || secBox.querySelector("textarea"); };
         var insrow = document.createElement("div");
         insrow.className = "insertrow";
         [
-          { label: "+ Add sequence to notes", open: function () {
-              openSequencePicker(draft.matchType, function (s) { appendToNotes(ta, sequenceText(s)); });
+          { label: "+ Insert sequence", open: function () {
+              openSequencePicker(draft.matchType, function (s) { appendToNotes(targetTa(), sequenceText(s)); });
             } },
-          { label: "+ Add move to notes", open: function () {
-              openMovePicker(function (m) { appendToNotes(ta, moveText(m)); });
+          { label: "+ Insert move", open: function () {
+              openMovePicker(function (m) { appendToNotes(targetTa(), moveText(m)); });
             } }
         ].forEach(function (cfg) {
           var b = document.createElement("button");
@@ -1537,6 +1646,19 @@
           insrow.appendChild(b);
         });
         body.appendChild(insrow);
+      } else {
+        var notesField = document.createElement("div");
+        notesField.className = "field";
+        var nlab = document.createElement("label");
+        nlab.setAttribute("for", "f-notes");
+        nlab.textContent = "Notes";
+        ta = document.createElement("textarea");
+        ta.id = "f-notes";
+        ta.placeholder = NOTE_PLACEHOLDER[kind];
+        ta.value = base.notes || "";
+        notesField.appendChild(nlab);
+        notesField.appendChild(ta);
+        body.appendChild(notesField);
       }
 
       var save = document.createElement("button");
@@ -1550,7 +1672,7 @@
           id: item ? item.id : uid(),
           kind: kind,
           title: title,
-          notes: ta.value.trim(),
+          notes: kind === "match" ? consolidateSections(draft.sections) : ta.value.trim(),
           createdAt: item ? (item.createdAt || now) : now,
           updatedAt: now
         };
@@ -1560,6 +1682,9 @@
         if (kind === "match") {
           next.opponent = oppIn ? oppIn.value.trim() : "";
           next.show = showIn ? showIn.value.trim() : "";
+          next.sections = draft.sections.map(function (s) {
+            return { type: s.type, text: s.text.trim() };
+          });
         }
         if (kind === "move" && item && item.learnedAt) next.learnedAt = item.learnedAt;
         closeOverlay();
