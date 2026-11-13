@@ -1,6 +1,6 @@
 /* Ring General service worker — cache-first app shell so the app opens
    with no signal (locker rooms rarely have good wifi). */
-var CACHE = "ring-general-v4";
+var CACHE = "ring-general-v5";
 var SHELL = [
   "./",
   "./index.html",
