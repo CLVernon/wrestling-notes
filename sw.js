@@ -1,6 +1,6 @@
 /* Ring General service worker — cache-first app shell so the app opens
    with no signal (locker rooms rarely have good wifi). */
-var CACHE = "ring-general-v3";
+var CACHE = "ring-general-v4";
 var SHELL = [
   "./",
   "./index.html",
@@ -8,7 +8,12 @@ var SHELL = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/apple-touch-icon.png",
+  "./fonts/oswald-500.woff2",
+  "./fonts/barlow-400.woff2",
+  "./fonts/barlow-500.woff2",
+  "./fonts/barlow-600.woff2",
+  "./fonts/barlow-700.woff2"
 ];
 
 self.addEventListener("install", function (e) {
